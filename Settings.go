@@ -18,7 +18,7 @@ type Settings interface {
 	ListConnections() []Connection
 
 	// AddConnection call new connection and save it to disk.
-	AddConnection(settings ConnectionSettings) Connection
+	AddConnection(settings ConnectionSettings) (Connection, error)
 }
 
 func NewSettings() (Settings, error) {
@@ -47,12 +47,12 @@ func (s *settings) ListConnections() []Connection {
 	return connections
 }
 
-func (s *settings) AddConnection(settings ConnectionSettings) Connection {
+func (s *settings) AddConnection(settings ConnectionSettings) (con Connection, err error) {
 	var path dbus.ObjectPath
-	s.call(&path, SettingsAddConnection, settings)
-	con, err := NewConnection(path)
+	err = s.callError(&path, SettingsAddConnection, settings)
 	if err != nil {
-		panic(err)
+		return
 	}
-	return con
+	con, err = NewConnection(path)
+	return
 }
