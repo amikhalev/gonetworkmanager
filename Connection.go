@@ -9,11 +9,26 @@ import (
 const (
 	ConnectionInterface = SettingsInterface + ".Connection"
 
-	ConnectionGetSettings = ConnectionInterface + ".GetSettings"
+	ConnectionGetSettings   = ConnectionInterface + ".GetSettings"
+	ConnectionUpdate        = ConnectionInterface + ".Update"
+	ConnectionUpdateUnsaved = ConnectionInterface + ".UpdateUnsaved"
+	ConnectionUpdate2       = ConnectionInterface + ".Update2"
 )
 
 //type ConnectionSettings map[string]map[string]interface{}
 type ConnectionSettings map[string]map[string]interface{}
+
+type ConnectionUpdate2Args map[string]interface{}
+type ConnectionUpdate2Flags uint32
+
+const (
+	UpdateToDisk           ConnectionUpdate2Flags = 0x01
+	UpdateInMemory                                = 0x02
+	UpdateInMemoryDetached                        = 0x04
+	UpdateInMemoryOnly                            = 0x08
+	UpdateVolatile                                = 0x10
+	UpdateBlockAutoconnect                        = 0x20
+)
 
 type Connection interface {
 	GetPath() dbus.ObjectPath
@@ -23,6 +38,10 @@ type Connection interface {
 	// network, as those are often protected. Secrets must be requested
 	// separately using the GetSecrets() call.
 	GetSettings() ConnectionSettings
+
+	Update(settings ConnectionSettings) error
+	UpdateUnsaved(settings ConnectionSettings) error
+	Update2(settings ConnectionSettings, flags ConnectionUpdate2Flags, args ConnectionUpdate2Args) error
 
 	MarshalJSON() ([]byte, error)
 }
@@ -55,6 +74,18 @@ func (c *connection) GetSettings() ConnectionSettings {
 	}
 
 	return rv
+}
+
+func (c *connection) Update(settings ConnectionSettings) (err error) {
+	return c.obj.Call(ConnectionUpdate, 0, settings).Store()
+}
+
+func (c *connection) UpdateUnsaved(settings ConnectionSettings) (err error) {
+	return c.obj.Call(ConnectionUpdateUnsaved, 0, settings).Store()
+}
+
+func (c *connection) Update2(settings ConnectionSettings, flags ConnectionUpdate2Flags, args ConnectionUpdate2Args) (err error) {
+	return c.obj.Call(ConnectionUpdate2, 0, settings, (uint32)(flags), args).Store()
 }
 
 func (c *connection) MarshalJSON() ([]byte, error) {
