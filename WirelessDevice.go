@@ -25,9 +25,10 @@ type WirelessDevice interface {
 	RequestScan()
 }
 
-func NewWirelessDevice(objectPath dbus.ObjectPath) (WirelessDevice, error) {
-	var d wirelessDevice
-	return &d, d.init(NetworkManagerInterface, objectPath)
+func NewWirelessDevice(conn *dbus.Conn, objectPath dbus.ObjectPath) WirelessDevice {
+	var d = &wirelessDevice{}
+	d.init(conn, NetworkManagerInterface, objectPath)
+	return d
 }
 
 type wirelessDevice struct {
@@ -40,12 +41,8 @@ func (d *wirelessDevice) GetAccessPoints() []AccessPoint {
 	d.call(&apPaths, WirelessDeviceGetAccessPoints)
 	aps := make([]AccessPoint, len(apPaths))
 
-	var err error
 	for i, path := range apPaths {
-		aps[i], err = NewAccessPoint(path)
-		if err != nil {
-			panic(err)
-		}
+		aps[i] = NewAccessPoint(d.conn, path)
 	}
 
 	return aps

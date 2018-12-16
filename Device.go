@@ -18,18 +18,15 @@ const (
 	DevicePropertyDhcp4Config          = DeviceInterface + ".Dhcp4Config"
 )
 
-func DeviceFactory(objectPath dbus.ObjectPath) (Device, error) {
-	d, err := NewDevice(objectPath)
-	if err != nil {
-		return nil, err
-	}
+func DeviceFactory(conn *dbus.Conn, objectPath dbus.ObjectPath) Device {
+	d := NewDevice(conn, objectPath).(*device)
 
 	switch d.GetDeviceType() {
 	case NmDeviceTypeWifi:
-		return NewWirelessDevice(objectPath)
+		return &wirelessDevice{*d}
 	}
 
-	return d, nil
+	return d
 }
 
 type Device interface {
@@ -66,9 +63,10 @@ type Device interface {
 	MarshalJSON() ([]byte, error)
 }
 
-func NewDevice(objectPath dbus.ObjectPath) (Device, error) {
-	var d device
-	return &d, d.init(NetworkManagerInterface, objectPath)
+func NewDevice(conn *dbus.Conn, objectPath dbus.ObjectPath) Device {
+	var d = &device{}
+	d.init(conn, NetworkManagerInterface, objectPath)
+	return d
 }
 
 type device struct {
@@ -97,11 +95,7 @@ func (d *device) GetIP4Config() IP4Config {
 		return nil
 	}
 
-	cfg, err := NewIP4Config(path)
-	if err != nil {
-		panic(err)
-	}
-
+	cfg := NewIP4Config(d.conn, path)
 	return cfg
 }
 
@@ -111,11 +105,7 @@ func (d *device) GetDHCP4Config() DHCP4Config {
 		return nil
 	}
 
-	cfg, err := NewDHCP4Config(path)
-	if err != nil {
-		panic(err)
-	}
-
+	cfg := NewDHCP4Config(d.conn, path)
 	return cfg
 }
 
@@ -127,12 +117,8 @@ func (d *device) GetAvailableConnections() []Connection {
 	connPaths := d.getSliceObjectProperty(DevicePropertyAvailableConnections)
 	conns := make([]Connection, len(connPaths))
 
-	var err error
 	for i, path := range connPaths {
-		conns[i], err = NewConnection(path)
-		if err != nil {
-			panic(err)
-		}
+		conns[i] = NewConnection(d.conn, path)
 	}
 
 	return conns

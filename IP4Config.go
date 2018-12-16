@@ -50,9 +50,10 @@ type IP4Config interface {
 	MarshalJSON() ([]byte, error)
 }
 
-func NewIP4Config(objectPath dbus.ObjectPath) (IP4Config, error) {
-	var c ip4Config
-	return &c, c.init(NetworkManagerInterface, objectPath)
+func NewIP4Config(conn *dbus.Conn, objectPath dbus.ObjectPath) IP4Config {
+	var c = &ip4Config{}
+	c.init(conn, NetworkManagerInterface, objectPath)
+	return c
 }
 
 type ip4Config struct {

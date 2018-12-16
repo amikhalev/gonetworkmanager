@@ -46,9 +46,10 @@ type Connection interface {
 	MarshalJSON() ([]byte, error)
 }
 
-func NewConnection(objectPath dbus.ObjectPath) (Connection, error) {
-	var c connection
-	return &c, c.init(NetworkManagerInterface, objectPath)
+func NewConnection(conn *dbus.Conn, objectPath dbus.ObjectPath) Connection {
+	var c = &connection{}
+	c.init(conn, NetworkManagerInterface, objectPath)
+	return c
 }
 
 type connection struct {

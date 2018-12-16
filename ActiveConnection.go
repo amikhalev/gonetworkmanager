@@ -63,9 +63,10 @@ type ActiveConnection interface {
 	GetMaster() Device
 }
 
-func NewActiveConnection(objectPath dbus.ObjectPath) (ActiveConnection, error) {
-	var a activeConnection
-	return &a, a.init(NetworkManagerInterface, objectPath)
+func NewActiveConnection(conn *dbus.Conn, objectPath dbus.ObjectPath) ActiveConnection {
+	var a = &activeConnection{}
+	a.init(conn, NetworkManagerInterface, objectPath)
+	return a
 }
 
 type activeConnection struct {
@@ -74,19 +75,13 @@ type activeConnection struct {
 
 func (a *activeConnection) GetConnection() Connection {
 	path := a.getObjectProperty(ActiveConnectionProperyConnection)
-	con, err := NewConnection(path)
-	if err != nil {
-		panic(err)
-	}
+	con := NewConnection(a.conn, path)
 	return con
 }
 
 func (a *activeConnection) GetSpecificObject() AccessPoint {
 	path := a.getObjectProperty(ActiveConnectionProperySpecificObject)
-	ap, err := NewAccessPoint(path)
-	if err != nil {
-		panic(err)
-	}
+	ap := NewAccessPoint(a.conn, path)
 	return ap
 }
 
@@ -105,12 +100,8 @@ func (a *activeConnection) GetType() string {
 func (a *activeConnection) GetDevices() []Device {
 	paths := a.getSliceObjectProperty(ActiveConnectionProperyDevices)
 	devices := make([]Device, len(paths))
-	var err error
 	for i, path := range paths {
-		devices[i], err = DeviceFactory(path)
-		if err != nil {
-			panic(err)
-		}
+		devices[i] = DeviceFactory(a.conn, path)
 	}
 	return devices
 }
@@ -130,19 +121,13 @@ func (a *activeConnection) GetDefault() bool {
 
 func (a *activeConnection) GetIP4Config() IP4Config {
 	path := a.getObjectProperty(ActiveConnectionProperyIP4Config)
-	r, err := NewIP4Config(path)
-	if err != nil {
-		panic(err)
-	}
+	r := NewIP4Config(a.conn, path)
 	return r
 }
 
 func (a *activeConnection) GetDHCP4Config() DHCP4Config {
 	path := a.getObjectProperty(ActiveConnectionProperyDHCP4Config)
-	r, err := NewDHCP4Config(path)
-	if err != nil {
-		panic(err)
-	}
+	r := NewDHCP4Config(a.conn, path)
 	return r
 }
 
@@ -153,9 +138,6 @@ func (a *activeConnection) GetVPN() bool {
 
 func (a *activeConnection) GetMaster() Device {
 	path := a.getObjectProperty(ActiveConnectionProperyMaster)
-	r, err := DeviceFactory(path)
-	if err != nil {
-		panic(err)
-	}
+	r := DeviceFactory(a.conn, path)
 	return r
 }

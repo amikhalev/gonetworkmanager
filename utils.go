@@ -17,17 +17,21 @@ type dbusBase struct {
 	obj  dbus.BusObject
 }
 
-func (d *dbusBase) init(iface string, objectPath dbus.ObjectPath) error {
-	var err error
-
-	d.conn, err = dbus.SystemBus()
-	if err != nil {
-		return err
-	}
-
+func (d *dbusBase) init(conn *dbus.Conn, iface string, objectPath dbus.ObjectPath) {
+	d.conn = conn
 	d.obj = d.conn.Object(iface, objectPath)
+}
 
-	return nil
+func (d *dbusBase) GetPath() dbus.ObjectPath {
+	return d.obj.Path()
+}
+
+func (d *dbusBase) GetDbusConnection() *dbus.Conn {
+	return d.conn
+}
+
+func (d *dbusBase) Close() error {
+	return d.conn.Close()
 }
 
 func (d *dbusBase) call(value interface{}, method string, args ...interface{}) {

@@ -21,9 +21,10 @@ type DHCP4Config interface {
 	MarshalJSON() ([]byte, error)
 }
 
-func NewDHCP4Config(objectPath dbus.ObjectPath) (DHCP4Config, error) {
-	var c dhcp4Config
-	return &c, c.init(NetworkManagerInterface, objectPath)
+func NewDHCP4Config(conn *dbus.Conn, objectPath dbus.ObjectPath) DHCP4Config {
+	var c = &dhcp4Config{}
+	c.init(conn, NetworkManagerInterface, objectPath)
+	return c
 }
 
 type dhcp4Config struct {

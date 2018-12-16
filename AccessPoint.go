@@ -21,7 +21,7 @@ const (
 )
 
 type AccessPoint interface {
-	GetPath() dbus.ObjectPath
+	NmObject
 
 	// GetFlags gets flags describing the capabilities of the access point.
 	GetFlags() uint32
@@ -58,9 +58,10 @@ type AccessPoint interface {
 	MarshalJSON() ([]byte, error)
 }
 
-func NewAccessPoint(objectPath dbus.ObjectPath) (AccessPoint, error) {
-	var a accessPoint
-	return &a, a.init(NetworkManagerInterface, objectPath)
+func NewAccessPoint(dbusConn *dbus.Conn, objectPath dbus.ObjectPath) AccessPoint {
+	var a = &accessPoint{}
+	a.init(dbusConn, NetworkManagerInterface, objectPath)
+	return a
 }
 
 type accessPoint struct {

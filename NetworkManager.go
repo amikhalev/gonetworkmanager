@@ -38,9 +38,18 @@ type NetworkManager interface {
 	MarshalJSON() ([]byte, error)
 }
 
-func NewNetworkManager() (NetworkManager, error) {
-	var nm networkManager
-	return &nm, nm.init(NetworkManagerInterface, NetworkManagerObjectPath)
+func NewNetworkManager(dbusConn *dbus.Conn) NetworkManager {
+	var nm = &networkManager{}
+	nm.init(dbusConn, NetworkManagerInterface, NetworkManagerObjectPath)
+	return nm
+}
+
+func NewNetworkManagerSystem() (NetworkManager, error) {
+	conn, err := dbus.SystemBus()
+	if err != nil {
+		return nil, err
+	}
+	return NewNetworkManager(conn), nil
 }
 
 type networkManager struct {
@@ -55,12 +64,8 @@ func (n *networkManager) GetDevices() []Device {
 	n.call(&devicePaths, NetworkManagerGetDevices)
 	devices := make([]Device, len(devicePaths))
 
-	var err error
 	for i, path := range devicePaths {
-		devices[i], err = DeviceFactory(path)
-		if err != nil {
-			panic(err)
-		}
+		devices[i] = DeviceFactory(n.conn, path)
 	}
 
 	return devices
@@ -74,12 +79,8 @@ func (n *networkManager) GetActiveConnections() []ActiveConnection {
 	acPaths := n.getSliceObjectProperty(NetworkManagerPropertyActiveConnection)
 	ac := make([]ActiveConnection, len(acPaths))
 
-	var err error
 	for i, path := range acPaths {
-		ac[i], err = NewActiveConnection(path)
-		if err != nil {
-			panic(err)
-		}
+		ac[i] = NewActiveConnection(n.conn, path)
 	}
 
 	return ac

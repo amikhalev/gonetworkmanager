@@ -21,9 +21,18 @@ type Settings interface {
 	AddConnection(settings ConnectionSettings) (Connection, error)
 }
 
-func NewSettings() (Settings, error) {
-	var s settings
-	return &s, s.init(NetworkManagerInterface, SettingsObjectPath)
+func NewSettings(conn *dbus.Conn) Settings {
+	var s = &settings{}
+	s.init(conn, NetworkManagerInterface, SettingsObjectPath)
+	return s
+}
+
+func NewSettingsSystem() (Settings, error) {
+	conn, err := dbus.SystemBus()
+	if err != nil {
+		return nil, err
+	}
+	return NewSettings(conn), nil
 }
 
 type settings struct {
@@ -36,12 +45,8 @@ func (s *settings) ListConnections() []Connection {
 	s.call(&connectionPaths, SettingsListConnections)
 	connections := make([]Connection, len(connectionPaths))
 
-	var err error
 	for i, path := range connectionPaths {
-		connections[i], err = NewConnection(path)
-		if err != nil {
-			panic(err)
-		}
+		connections[i] = NewConnection(s.conn, path)
 	}
 
 	return connections
@@ -53,6 +58,6 @@ func (s *settings) AddConnection(settings ConnectionSettings) (con Connection, e
 	if err != nil {
 		return
 	}
-	con, err = NewConnection(path)
+	con = NewConnection(s.conn, path)
 	return
 }
